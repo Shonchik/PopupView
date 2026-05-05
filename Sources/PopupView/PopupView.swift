@@ -8,10 +8,11 @@
 
 import SwiftUI
 
-public struct Popup<PopupContent: View>: ViewModifier {
+public struct Popup<PopupContent: View, HeaderContent: View>: ViewModifier {
 
-    init(params: Popup<PopupContent>.PopupParameters,
+    init(params: Popup<PopupContent, HeaderContent>.ScrollPopupParameters,
          view: @escaping () -> PopupContent,
+         headerView: (() -> HeaderContent)?,
          shouldShowContent: Binding<Bool>,
          showContent: Bool,
          isDragging: Binding<Bool>,
@@ -20,6 +21,7 @@ public struct Popup<PopupContent: View>: ViewModifier {
          dismissCallback: @escaping (DismissSource)->()) {
 
         self.type = params.type
+        self.isScrollPopup = params.isScrollPopup
         self.displayMode = params.displayMode
         self.position = params.position ?? params.type.defaultPosition
         self.appearFrom = params.appearFrom
@@ -35,6 +37,7 @@ public struct Popup<PopupContent: View>: ViewModifier {
         self.closeOnTap = params.closeOnTap
 
         self.view = view
+        self.headerView = headerView
 
         self.shouldShowContent = shouldShowContent
         self.showContent = showContent
@@ -70,6 +73,7 @@ public struct Popup<PopupContent: View>: ViewModifier {
     // MARK: - Public Properties
 
     var type: PopupType
+    var isScrollPopup: Bool
     var displayMode: DisplayMode
     var position: Position
     var appearFrom: AppearAnimation?
@@ -107,6 +111,8 @@ public struct Popup<PopupContent: View>: ViewModifier {
     var dismissCallback: (DismissSource)->()
 
     var view: () -> PopupContent
+
+    var headerView: (() -> HeaderContent)?
 
     // MARK: - Private Properties
 
@@ -389,13 +395,12 @@ public struct Popup<PopupContent: View>: ViewModifier {
             }
             .onEnded(onDragEnded)
 
-        switch type {
-        case .scroll(let headerView):
+        if isScrollPopup {
             VStack(spacing: 0) {
-                scrollHeaderView(view: headerView)
+                headerView?()
                     .fixedSize(horizontal: false, vertical: true)
                     .offset(dragOffset())
-                    .simultaneousGesture(dragGesture)
+                    .gesture(dragGesture)
 
                 ScrollView {
                     view()
@@ -411,26 +416,17 @@ public struct Popup<PopupContent: View>: ViewModifier {
                 .offset(dragOffset())
             }
             .offset(CGSize(width: 0, height: scrollViewOffset.height))
-
-        default:
+            .overlay {
+                PopupHitTestingForeground() // Disable hit testing workaround
+                    .ignoresSafeArea()
+            }
+        } else {
             view()
         }
 #else
         view()
 #endif
     }
-
-#if os(iOS)
-    @ViewBuilder
-    func scrollHeaderView(view: any View) -> some View {
-        ZStack {
-            Color.white
-                .mask(AnyView(view))
-
-            AnyView(view)
-        }
-    }
-#endif
 
 #if swift(>=5.9)
     /// This is the builder for the sheet content
@@ -478,7 +474,7 @@ public struct Popup<PopupContent: View>: ViewModifier {
                 .onChange(of: sheetContentRect.size) { sheetContentRect in
                     #if os(iOS)
                     // check if scrollView has already calculated its height, otherwise sheetContentRect is already non-zero but yet incorrect
-                    if case .scroll = type, scrollViewRect.height == 0 {
+                    if isScrollPopup, scrollViewRect.height == 0 {
                         return
                     }
                     #endif
@@ -549,12 +545,12 @@ public struct Popup<PopupContent: View>: ViewModifier {
     @ViewBuilder
     func sheetWithDragGesture() -> some View {
 #if !os(tvOS)
-        switch type {
 #if os(iOS)
-        case .scroll:
-            sheet() // Drag to dismiss is handled inside
+        if isScrollPopup {
+            sheet()
+        }
 #endif
-        default:
+        if !isScrollPopup {
             let dragGesture = DragGesture()
                 .updating($dragState) { drag, state, _ in
                     if !isDragging {

@@ -22,9 +22,6 @@ extension Popup {
         case `default`
         case toast
         case floater(verticalPadding: CGFloat = 10, horizontalPadding: CGFloat = 10, useSafeAreaInset: Bool = true)
-#if os(iOS)
-        case scroll(headerView: any View = EmptyView())
-#endif
 
         var defaultPosition: Position {
             if case .default = self {
@@ -108,8 +105,9 @@ extension Popup {
         case none
     }
 
-    public struct PopupParameters {
+    public class ScrollPopupParameters {
         var type: PopupType = .default
+        var isScrollPopup: Bool = true
         var displayMode: DisplayMode = .window
         var position: Position?
 
@@ -160,50 +158,44 @@ extension Popup {
         /// called when when dismiss animation ends
         var dismissCallback: (DismissSource) -> () = {_ in}
 
-        public func type(_ type: PopupType) -> PopupParameters {
-            var params = self
-            params.type = type
-            return params
-        }
-
-        public func displayMode(_ displayMode: DisplayMode) -> PopupParameters {
-            var params = self
+        public func displayMode(_ displayMode: DisplayMode) -> ScrollPopupParameters {
+            let params = self
             params.displayMode = displayMode
             return params
         }
 
-        public func position(_ position: Position) -> PopupParameters {
-            var params = self
+        public func position(_ position: Position) -> ScrollPopupParameters {
+            let params = self
             params.position = position
             return params
         }
 
-        public func appearFrom(_ appearFrom: AppearAnimation) -> PopupParameters {
-            var params = self
+        public func appearFrom(_ appearFrom: AppearAnimation) -> ScrollPopupParameters {
+            let params = self
             params.appearFrom = appearFrom
             return params
         }
 
-        public func disappearTo(_ disappearTo: AppearAnimation) -> PopupParameters {
-            var params = self
+        public func disappearTo(_ disappearTo: AppearAnimation) -> ScrollPopupParameters {
+            let params = self
             params.disappearTo = disappearTo
             return params
         }
 
-        public func animation(_ animation: Animation) -> PopupParameters {
-            var params = self
+        public func animation(_ animation: Animation) -> ScrollPopupParameters {
+            let params = self
             params.animation = animation
             return params
         }
 
-        public func autohideIn(_ autohideIn: Double?) -> PopupParameters {
-            var params = self
+        public func autohideIn(_ autohideIn: Double?) -> ScrollPopupParameters {
+            let params = self
             params.autohideIn = autohideIn
             return params
         }
 
-        public func dismissibleIn(_ dismissibleIn: Double?, _ dismissEnabled: Binding<Bool>?) -> PopupParameters {
-            var params = self
+        public func dismissibleIn(_ dismissibleIn: Double?, _ dismissEnabled: Binding<Bool>?) -> ScrollPopupParameters {
+            let params = self
             params.dismissibleIn = dismissibleIn
             if let dismissEnabled = dismissEnabled {
                 params.dismissEnabled = dismissEnabled
@@ -212,75 +204,75 @@ extension Popup {
         }
 
         /// Should allow dismiss by dragging - default is `true`
-        public func dragToDismiss(_ dragToDismiss: Bool) -> PopupParameters {
-            var params = self
+        public func dragToDismiss(_ dragToDismiss: Bool) -> ScrollPopupParameters {
+            let params = self
             params.dragToDismiss = dragToDismiss
             return params
         }
 
         /// Minimum distance to drag to dismiss
-        public func dragToDismissDistance(_ dragToDismissDistance: CGFloat) -> PopupParameters {
-            var params = self
+        public func dragToDismissDistance(_ dragToDismissDistance: CGFloat) -> ScrollPopupParameters {
+            let params = self
             params.dragToDismissDistance = dragToDismissDistance
             return params
         }
 
         /// Should close on tap - default is `true`
         /// NOTE: any gesture or control element you add to popup's body will override tap to close. in this case please close the popup manually if you need it to
-        public func closeOnTap(_ closeOnTap: Bool) -> PopupParameters {
-            var params = self
+        public func closeOnTap(_ closeOnTap: Bool) -> ScrollPopupParameters {
+            let params = self
             params.closeOnTap = closeOnTap
             return params
         }
 
         /// Should close on tap outside - default is `false`
-        public func closeOnTapOutside(_ closeOnTapOutside: Bool) -> PopupParameters {
-            var params = self
+        public func closeOnTapOutside(_ closeOnTapOutside: Bool) -> ScrollPopupParameters {
+            let params = self
             params.closeOnTapOutside = closeOnTapOutside
             return params
         }
 
-        public func allowTapThroughBG(_ allowTapThroughBG: Bool) -> PopupParameters {
-            var params = self
+        public func allowTapThroughBG(_ allowTapThroughBG: Bool) -> ScrollPopupParameters {
+            let params = self
             params.allowTapThroughBG = allowTapThroughBG
             return params
         }
 
-        public func backgroundColor(_ backgroundColor: Color) -> PopupParameters {
-            var params = self
+        public func backgroundColor(_ backgroundColor: Color) -> ScrollPopupParameters {
+            let params = self
             params.backgroundColor = backgroundColor
             return params
         }
 
-        public func backgroundView<BackgroundView: View>(_ backgroundView: ()->(BackgroundView)) -> PopupParameters {
-            var params = self
+        public func backgroundView<BackgroundView: View>(_ backgroundView: ()->(BackgroundView)) -> ScrollPopupParameters {
+            let params = self
             params.backgroundView = AnyView(backgroundView())
             return params
         }
 
         @available(*, deprecated, message: "use displayMode instead")
-        public func isOpaque(_ isOpaque: Bool) -> PopupParameters {
-            var params = self
+        public func isOpaque(_ isOpaque: Bool) -> ScrollPopupParameters {
+            let params = self
             params.displayMode = isOpaque ? .sheet : .overlay
             return params
         }
 
-        public func useKeyboardSafeArea(_ useKeyboardSafeArea: Bool) -> PopupParameters {
-            var params = self
+        public func useKeyboardSafeArea(_ useKeyboardSafeArea: Bool) -> ScrollPopupParameters {
+            let params = self
             params.useKeyboardSafeArea = useKeyboardSafeArea
             return params
         }
 
         // MARK: - dismiss callbacks
 
-        public func willDismissCallback(_ dismissCallback: @escaping (DismissSource) -> ()) -> PopupParameters {
-            var params = self
+        public func willDismissCallback(_ dismissCallback: @escaping (DismissSource) -> ()) -> ScrollPopupParameters {
+            let params = self
             params.willDismissCallback = dismissCallback
             return params
         }
 
-        public func willDismissCallback(_ dismissCallback: @escaping () -> ()) -> PopupParameters {
-            var params = self
+        public func willDismissCallback(_ dismissCallback: @escaping () -> ()) -> ScrollPopupParameters {
+            let params = self
             params.willDismissCallback = { _ in
                 dismissCallback()
             }
@@ -288,23 +280,31 @@ extension Popup {
         }
 
         @available(*, deprecated, renamed: "dismissCallback")
-        public func dismissSourceCallback(_ dismissCallback: @escaping (DismissSource) -> ()) -> PopupParameters {
-            var params = self
+        public func dismissSourceCallback(_ dismissCallback: @escaping (DismissSource) -> ()) -> ScrollPopupParameters {
+            let params = self
             params.dismissCallback = dismissCallback
             return params
         }
 
-        public func dismissCallback(_ dismissCallback: @escaping (DismissSource) -> ()) -> PopupParameters {
-            var params = self
+        public func dismissCallback(_ dismissCallback: @escaping (DismissSource) -> ()) -> ScrollPopupParameters {
+            let params = self
             params.dismissCallback = dismissCallback
             return params
         }
 
-        public func dismissCallback(_ dismissCallback: @escaping () -> ()) -> PopupParameters {
-            var params = self
+        public func dismissCallback(_ dismissCallback: @escaping () -> ()) -> ScrollPopupParameters {
+            let params = self
             params.dismissCallback = { _ in
                 dismissCallback()
             }
+            return params
+        }
+    }
+
+    public class PopupParameters: ScrollPopupParameters {
+        public func type(_ type: PopupType) -> PopupParameters {
+            let params = self
+            params.type = type
             return params
         }
     }

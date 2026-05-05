@@ -25,14 +25,17 @@ extension View {
     public func popup<PopupContent: View>(
         isPresented: Binding<Bool>,
         @ViewBuilder view: @escaping () -> PopupContent,
-        customize: @escaping (Popup<PopupContent>.PopupParameters) -> Popup<PopupContent>.PopupParameters
+        customize: @escaping (Popup<PopupContent, EmptyView>.PopupParameters) -> Popup<PopupContent, EmptyView>.ScrollPopupParameters
         ) -> some View {
-            self.modifier(
-                FullscreenPopup<Int, PopupContent>(
+            let params = customize(Popup<PopupContent, EmptyView>.PopupParameters())
+            params.isScrollPopup = false
+            return self.modifier(
+                FullscreenPopup<Int, PopupContent, EmptyView>(
                     isPresented: isPresented,
                     isBoolMode: true,
-                    params: customize(Popup<PopupContent>.PopupParameters()),
+                    params: params,
                     view: view,
+                    headerView: nil,
                     itemView: nil)
             )
             .environment(\.popupDismiss) {
@@ -43,14 +46,17 @@ extension View {
     public func popup<Item: Equatable, PopupContent: View>(
         item: Binding<Item?>,
         @ViewBuilder itemView: @escaping (Item) -> PopupContent,
-        customize: @escaping (Popup<PopupContent>.PopupParameters) -> Popup<PopupContent>.PopupParameters
+        customize: @escaping (Popup<PopupContent, EmptyView>.PopupParameters) -> Popup<PopupContent, EmptyView>.ScrollPopupParameters
         ) -> some View {
-            self.modifier(
-                FullscreenPopup<Item, PopupContent>(
+            let params = customize(Popup<PopupContent, EmptyView>.PopupParameters())
+            params.isScrollPopup = false
+            return self.modifier(
+                FullscreenPopup<Item, PopupContent, EmptyView>(
                     item: item,
                     isBoolMode: false,
-                    params: customize(Popup<PopupContent>.PopupParameters()),
+                    params: params,
                     view: nil,
+                    headerView: nil,
                     itemView: itemView)
             )
             .environment(\.popupDismiss) {
@@ -61,12 +67,15 @@ extension View {
     public func popup<PopupContent: View>(
         isPresented: Binding<Bool>,
         @ViewBuilder view: @escaping () -> PopupContent) -> some View {
-            self.modifier(
-                FullscreenPopup<Int, PopupContent>(
+            let params = Popup<PopupContent, EmptyView>.ScrollPopupParameters()
+            params.isScrollPopup = false
+            return self.modifier(
+                FullscreenPopup<Int, PopupContent, EmptyView>(
                     isPresented: isPresented,
                     isBoolMode: true,
-                    params: Popup<PopupContent>.PopupParameters(),
+                    params: params,
                     view: view,
+                    headerView: nil,
                     itemView: nil)
             )
             .environment(\.popupDismiss) {
@@ -77,18 +86,101 @@ extension View {
     public func popup<Item: Equatable, PopupContent: View>(
         item: Binding<Item?>,
         @ViewBuilder itemView: @escaping (Item) -> PopupContent) -> some View {
-            self.modifier(
-                FullscreenPopup<Item, PopupContent>(
+            let params = Popup<PopupContent, EmptyView>.ScrollPopupParameters()
+            params.isScrollPopup = false
+            return self.modifier(
+                FullscreenPopup<Item, PopupContent, EmptyView>(
                     item: item,
                     isBoolMode: false,
-                    params: Popup<PopupContent>.PopupParameters(),
+                    params: params,
                     view: nil,
+                    headerView: nil,
                     itemView: itemView)
             )
             .environment(\.popupDismiss) {
                 item.wrappedValue = nil
             }
         }
+
+#if os(iOS)
+// MARK: ScrollablePopup
+    public func scrollablePopup<PopupContent: View, HeaderContent: View>(
+        isPresented: Binding<Bool>,
+        @ViewBuilder view: @escaping () -> PopupContent,
+        @ViewBuilder headerView: @escaping () -> HeaderContent,
+        customize: @escaping (Popup<PopupContent, HeaderContent>.ScrollPopupParameters) -> Popup<PopupContent, HeaderContent>.ScrollPopupParameters
+        ) -> some View {
+            self.modifier(
+                FullscreenPopup<Int, PopupContent, HeaderContent>(
+                    isPresented: isPresented,
+                    isBoolMode: true,
+                    params: customize(Popup<PopupContent, HeaderContent>.ScrollPopupParameters()),
+                    view: view,
+                    headerView: headerView,
+                    itemView: nil)
+            )
+            .environment(\.popupDismiss) {
+                isPresented.wrappedValue = false
+            }
+        }
+
+    public func scrollablePopup<Item: Equatable, PopupContent: View, HeaderContent: View>(
+        item: Binding<Item?>,
+        @ViewBuilder itemView: @escaping (Item) -> PopupContent,
+        @ViewBuilder headerView: @escaping () -> HeaderContent,
+        customize: @escaping (Popup<PopupContent, HeaderContent>.ScrollPopupParameters) -> Popup<PopupContent, HeaderContent>.ScrollPopupParameters
+        ) -> some View {
+            self.modifier(
+                FullscreenPopup<Item, PopupContent, HeaderContent>(
+                    item: item,
+                    isBoolMode: false,
+                    params: customize(Popup<PopupContent, HeaderContent>.ScrollPopupParameters()),
+                    view: nil,
+                    headerView: headerView,
+                    itemView: itemView)
+            )
+            .environment(\.popupDismiss) {
+                item.wrappedValue = nil
+            }
+        }
+
+    public func scrollablePopup<PopupContent: View, HeaderContent: View>(
+        isPresented: Binding<Bool>,
+        @ViewBuilder view: @escaping () -> PopupContent,
+        @ViewBuilder headerView: @escaping () -> HeaderContent) -> some View {
+            self.modifier(
+                FullscreenPopup<Int, PopupContent, HeaderContent>(
+                    isPresented: isPresented,
+                    isBoolMode: true,
+                    params: Popup<PopupContent, HeaderContent>.ScrollPopupParameters(),
+                    view: view,
+                    headerView: headerView,
+                    itemView: nil)
+            )
+            .environment(\.popupDismiss) {
+                isPresented.wrappedValue = false
+            }
+        }
+
+    public func scrollablePopup<Item: Equatable, PopupContent: View, HeaderContent: View>(
+        item: Binding<Item?>,
+        @ViewBuilder itemView: @escaping (Item) -> PopupContent,
+        @ViewBuilder headerView: @escaping () -> HeaderContent) -> some View {
+            self.modifier(
+                FullscreenPopup<Item, PopupContent, HeaderContent>(
+                    item: item,
+                    isBoolMode: false,
+                    params: Popup<PopupContent, HeaderContent>.ScrollPopupParameters(),
+                    view: nil,
+                    headerView: headerView,
+                    itemView: itemView)
+            )
+            .environment(\.popupDismiss) {
+                item.wrappedValue = nil
+            }
+        }
+
+#endif
 }
 
 #if os(iOS)

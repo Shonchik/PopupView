@@ -238,11 +238,12 @@ struct ContentView : View {
                     .closeOnTap(false)
                     .backgroundColor(.black.opacity(0.4))
             }
-            .popup(isPresented: $actionSheets.showingSecond) {
+            .scrollablePopup(isPresented: $actionSheets.showingSecond) {
                 ActionSheetSecond()
+            } headerView: {
+                scrollViewHeader()
             } customize: {
                 $0
-                    .type(.scroll(headerView: scrollViewHeader()))
                     .position(.bottom)
                     .closeOnTap(false)
                     .closeOnTapOutside(true)

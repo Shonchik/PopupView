@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 @MainActor
-public struct FullscreenPopup<Item: Equatable, PopupContent: View>: ViewModifier {
+public struct FullscreenPopup<Item: Equatable, PopupContent: View, HeaderContent: View>: ViewModifier {
 
     // MARK: - Presentation
 
@@ -50,7 +50,7 @@ public struct FullscreenPopup<Item: Equatable, PopupContent: View>: ViewModifier
     var backgroundView: AnyView?
 
     /// If opaque - taps do not pass through popup's background color
-    var displayMode: Popup<PopupContent>.DisplayMode
+    var displayMode: Popup<PopupContent, HeaderContent>.DisplayMode
 
     /// called when when dismiss animation starts
     var userWillDismissCallback: (DismissSource) -> ()
@@ -58,9 +58,10 @@ public struct FullscreenPopup<Item: Equatable, PopupContent: View>: ViewModifier
     /// called when when dismiss animation ends
     var userDismissCallback: (DismissSource) -> ()
 
-    var params: Popup<PopupContent>.PopupParameters
+    var params: Popup<PopupContent, HeaderContent>.ScrollPopupParameters
 
     var view: (() -> PopupContent)!
+    var headerView: (() -> HeaderContent)?
     var itemView: ((Item) -> PopupContent)!
 
     // MARK: - Presentation animation
@@ -120,8 +121,9 @@ public struct FullscreenPopup<Item: Equatable, PopupContent: View>: ViewModifier
     init(isPresented: Binding<Bool> = .constant(false),
          item: Binding<Item?> = .constant(nil),
          isBoolMode: Bool,
-         params: Popup<PopupContent>.PopupParameters,
+         params: Popup<PopupContent, HeaderContent>.ScrollPopupParameters,
          view: (() -> PopupContent)?,
+         headerView: (() -> HeaderContent)?,
          itemView: ((Item) -> PopupContent)?) {
         self._isPresented = isPresented
         self._item = item
@@ -142,6 +144,7 @@ public struct FullscreenPopup<Item: Equatable, PopupContent: View>: ViewModifier
         if let view = view {
             self.view = view
         }
+        self.headerView = headerView
         if let itemView = itemView {
             self.itemView = itemView
         }
@@ -289,10 +292,11 @@ public struct FullscreenPopup<Item: Equatable, PopupContent: View>: ViewModifier
         return nil
     }
 
-    private func getModifier() -> Popup<PopupContent> {
+    private func getModifier() -> Popup<PopupContent, HeaderContent> {
         Popup(
             params: params,
             view: viewForItem != nil ? viewForItem! : view,
+            headerView: headerView,
             shouldShowContent: $shouldShowContent,
             showContent: showContent,
             isDragging: $isDragging,
